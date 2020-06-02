@@ -56,9 +56,9 @@ public class Util {
      */
     public static String appendQueryParamsStringToUrl(String url, String queryParamString) {
         String queryAppendedUrl = url;
-        // check whether param string to append is blank
+        // Check whether param string to append is blank.
         if (StringUtils.isNotEmpty(queryParamString)) {
-            // check whether the URL already contains query params
+            // Check whether the URL already contains query params.
             String appender;
             if (url.contains("?")) {
                 appender = "&";
@@ -66,7 +66,7 @@ public class Util {
                 appender = "?";
             }
 
-            // remove leading anchor or question mark in query params
+            // Remove leading anchor or question mark in query params.
             if (queryParamString.startsWith("?") || queryParamString.startsWith("&")) {
                 queryParamString = queryParamString.substring(1);
             }
