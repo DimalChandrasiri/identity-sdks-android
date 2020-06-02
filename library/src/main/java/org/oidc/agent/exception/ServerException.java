@@ -18,6 +18,9 @@
 
 package org.oidc.agent.exception;
 
+/**
+ * Hnadles the exception thrown from server side.
+ */
 public class ServerException extends Throwable {
 
     private String message;

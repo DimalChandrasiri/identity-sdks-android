@@ -21,10 +21,14 @@ package org.oidc.agent.sso;
 import android.os.AsyncTask;
 import android.util.Log;
 import okio.Okio;
+import org.json.JSONException;
 import org.json.JSONObject;
+import org.oidc.agent.exception.ClientException;
 import org.oidc.agent.util.Constants;
 
+import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 
@@ -61,9 +65,15 @@ public class UserInfoRequest extends AsyncTask<Void, Void, UserInfoResponse> {
             userInfoResponse = new UserInfoResponse(json);
             mCallback.onUserInfoRequestCompleted(userInfoResponse);
 
-        } catch (Exception e) {
-            //
+        } catch (MalformedURLException e) {
+            Log.e(LOG_TAG, "Error while calling userinfo endpoint");
+        } catch (IOException e) {
+            Log.e(LOG_TAG, "Error while calling userinfo endpoint");
+        } catch (JSONException e){
+            Log.e(LOG_TAG, "Error while getting response from userinfo endpoint");
         }
+
+
         return userInfoResponse;
     }
 

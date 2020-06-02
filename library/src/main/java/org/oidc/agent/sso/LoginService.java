@@ -225,14 +225,21 @@ public class LoginService {
         }
     }
 
+    /**
+     * Return token response.
+     * @return OAuth2TokenResponse
+     */
     public OAuth2TokenResponse getTokenResponse() {
 
         return mOAuth2TokenResponse;
     }
 
+    /**
+     * Return userinfo response.
+     * @param callback UserInfoResponseCallback.
+     */
     public void getUserInfo(UserInfoRequest.UserInfoResponseCallback callback) {
 
-        Log.i(LOG_TAG, "Call userinfo");
         new UserInfoRequest(mDiscovery, mOAuth2TokenResponse.getAccessToken(), callback).execute();
     }
 

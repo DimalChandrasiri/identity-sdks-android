@@ -29,13 +29,21 @@ import java.util.Map;
 
 public class Util {
 
+    /**
+     * Handles adding query parameters to URL.
+     *
+     * @param url         URL
+     * @param queryParams Map of query params.
+     * @return URL appended with query params.
+     * @throws UnsupportedEncodingException
+     */
     public static String buildURLWithQueryParams(String url, Map<String, String> queryParams)
             throws UnsupportedEncodingException {
 
         List<String> queryParam1 = new ArrayList<>();
         for (Map.Entry<String, String> entry : queryParams.entrySet()) {
-            String encodedValue = URLEncoder.encode(entry.getValue(),
-                    String.valueOf(Charset.forName("UTF-8")));
+            String encodedValue = URLEncoder
+                    .encode(entry.getValue(), String.valueOf(Charset.forName("UTF-8")));
             queryParam1.add(entry.getKey() + "=" + encodedValue);
         }
 
@@ -65,7 +73,6 @@ public class Util {
 
             queryAppendedUrl += appender + queryParamString;
         }
-
         return queryAppendedUrl;
     }
 }

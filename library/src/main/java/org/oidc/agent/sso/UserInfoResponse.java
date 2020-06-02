@@ -29,7 +29,7 @@ import org.oidc.agent.util.Constants;
 public class UserInfoResponse {
 
     private JSONObject mUserInfoResponse;
-    static final String LOG_TAG = "UserInfoResponse";
+    private static final String LOG_TAG = "UserInfoResponse";
 
     public UserInfoResponse(JSONObject userInfoResponse) {
 
@@ -42,7 +42,6 @@ public class UserInfoResponse {
      */
     public String getSubject(){
 
-        Log.i(LOG_TAG, "Call subject in userinfo service");
         return getUserInfoProperty(Constants.SUBJECT);
     }
 
@@ -53,10 +52,11 @@ public class UserInfoResponse {
      */
     public String getUserInfoProperty(String property) {
 
-        Log.i(LOG_TAG, "Call userinfo service to get property");
         String userInfoProperty = null;
         try {
             userInfoProperty = (String) mUserInfoResponse.get(property);
+            Log.d(LOG_TAG, "Get the value for the claim: "+ property +" from userinfo response");
+
         } catch (JSONException e) {
 
         }
@@ -65,8 +65,7 @@ public class UserInfoResponse {
 
     public JSONObject getUserInfoProperties() {
 
-        Log.i(LOG_TAG, "Call userinfo service to get all claims");
+        Log.d(LOG_TAG, "Get all claim information from userinfo response");
         return mUserInfoResponse;
-
     }
 }

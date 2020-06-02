@@ -34,7 +34,7 @@ public class TokenRequest extends AsyncTask<Void, Void, OAuth2TokenResponse> {
     private AuthorizationResponse mResponse;
     private TokenRespCallback mCallback;
     private static final String LOG_TAG = "TokenRequest";
-    OAuth2TokenResponse oAuth2TokenResponse;
+    private OAuth2TokenResponse oAuth2TokenResponse;
 
     TokenRequest(AuthorizationService mAuthorizationService,
             OAuth2TokenResponse mAuth2TokenResponse, AuthorizationResponse mResponse,
