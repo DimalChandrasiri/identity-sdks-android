@@ -122,13 +122,13 @@ public class LoginService {
     private OAuthDiscoveryResponse callDiscoveryUri() throws ServerException, ClientException {
 
         HttpURLConnection conn;
-        URL userInfoEndpoint;
+        URL discoveryEndpoint;
 
         try {
             Log.d(LOG_TAG, "Call discovery service of identity server via: " + mConfigManager
                     .getDiscoveryUri().toString());
-            userInfoEndpoint = new URL(mConfigManager.getDiscoveryUri().toString());
-            conn = (HttpURLConnection) userInfoEndpoint.openConnection();
+            discoveryEndpoint = new URL(mConfigManager.getDiscoveryUri().toString());
+            conn = (HttpURLConnection) discoveryEndpoint.openConnection();
             conn.setRequestMethod(Constants.HTTP_GET);
             conn.setDoInput(true);
             String response = Okio.buffer(Okio.source(conn.getInputStream()))
