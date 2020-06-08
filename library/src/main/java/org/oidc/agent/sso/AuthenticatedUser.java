@@ -16,23 +16,31 @@
  * under the License.
  */
 
-package org.oidc.agent.exception;
+package org.oidc.agent.sso;
 
-/**
- * Handles the exception thrown from server side.
- */
-public class ServerException extends Throwable {
+import org.json.JSONObject;
 
-    private String message;
+public class AuthenticatedUser {
 
-    public ServerException(String msg) {
-        this.message = msg;
+    private  String mUserName;
+    private JSONObject mUserClaims;
+
+
+    public String getUserName(){
+        return mUserName;
     }
 
-    public ServerException(String msg, Exception e) {
+    public JSONObject getClaims(){
+        return mUserClaims;
     }
 
-    public String getMessage() {
-        return message;
+    public void setUserName(String userName){
+        this.mUserName = userName;
+
     }
+    public void setClaims(JSONObject userClaims){
+        this.mUserClaims = userClaims;
+
+    }
+
 }

@@ -18,12 +18,13 @@
 
 package org.oidc.agent.sso;
 
+import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
 import okio.Okio;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.oidc.agent.exception.ClientException;
+import org.oidc.agent.exception.ServerException;
 import org.oidc.agent.util.Constants;
 
 import java.io.IOException;
@@ -35,46 +36,73 @@ import java.nio.charset.Charset;
 public class UserInfoRequest extends AsyncTask<Void, Void, UserInfoResponse> {
 
     private OAuthDiscoveryResponse mDiscovery;
-    private String accessToken;
     private UserInfoResponseCallback mCallback;
+    private ServerException mServerException;
+    private UserInfoResponse mUserInfoResponse;
+    private StateManager mStateManager;
+
     private static final String LOG_TAG = "UserInfoRequest";
 
 
-    UserInfoRequest(OAuthDiscoveryResponse discovery, String accessToken,
+    UserInfoRequest(Context context, OAuthDiscoveryResponse discovery,
             UserInfoResponseCallback callback) {
 
         this.mDiscovery = discovery;
         this.mCallback = callback;
-        this.accessToken = accessToken;
+        this.mStateManager = StateManager.getInstance(context);
+
     }
 
     @Override
     protected UserInfoResponse doInBackground(Void... voids) {
 
-        UserInfoResponse userInfoResponse = null;
-        Log.d(LOG_TAG, "Call userinfo endpoint: " + mDiscovery.getUserInfoEndpoint().toString());
-        try {
-            URL userInfoEndpoint = new URL(mDiscovery.getUserInfoEndpoint().toString());
-            HttpURLConnection conn = (HttpURLConnection) userInfoEndpoint.openConnection();
-            conn.setRequestProperty(Constants.AUTHORIZATION, Constants.BEARER + accessToken);
-            conn.setInstanceFollowRedirects(false);
-            String response = Okio.buffer(Okio.source(conn.getInputStream()))
-                    .readString(Charset.forName("UTF-8"));
+        if (mStateManager.getCurrentUserState() != null &&
+                mStateManager.getCurrentUserState().getLastUserInfoResponse()!=null) {
+            Log.d(LOG_TAG, "There is already a userinfo response is stored");
+            mUserInfoResponse = mStateManager.getCurrentUserState().getLastUserInfoResponse();
 
-            JSONObject json = new JSONObject(response);
-            userInfoResponse = new UserInfoResponse(json);
-            mCallback.onUserInfoRequestCompleted(userInfoResponse);
+        } else {
+            try {
+                String accessToken = mStateManager.getCurrentAuthState().getAccessToken();
+                URL userInfoEndpoint = new URL(mDiscovery.getUserInfoEndpoint().toString());
+                Log.d(LOG_TAG, "Call userinfo endpoint: " + mDiscovery.getUserInfoEndpoint().toString());
 
-        } catch (MalformedURLException e) {
-            Log.e(LOG_TAG, "Error while calling userinfo endpoint");
-        } catch (IOException e) {
-            Log.e(LOG_TAG, "Error while calling userinfo endpoint");
-        } catch (JSONException e){
-            Log.e(LOG_TAG, "Error while getting response from userinfo endpoint");
+                HttpURLConnection conn = (HttpURLConnection) userInfoEndpoint.openConnection();
+                conn.setRequestProperty(Constants.AUTHORIZATION, Constants.BEARER + accessToken);
+                conn.setInstanceFollowRedirects(false);
+                String response = Okio.buffer(Okio.source(conn.getInputStream()))
+                        .readString(Charset.forName("UTF-8"));
+
+                JSONObject json = new JSONObject(response);
+                mUserInfoResponse = new UserInfoResponse(json);
+                mStateManager.updateAfterUserInfoState(mUserInfoResponse);
+
+            } catch (MalformedURLException e) {
+                String error = "Error while calling userinfo endpoint";
+                Log.e(LOG_TAG, error);
+                mServerException = new ServerException(error, e);
+            } catch (IOException e) {
+                String error = "Error while calling userinfo endpoint";
+                Log.e(LOG_TAG, error);
+                mServerException = new ServerException(error, e);
+            } catch (JSONException e) {
+                String error = "Error while getting response from userinfo endpoint";
+                Log.e(LOG_TAG, error);
+                mServerException = new ServerException(error, e);
+            }
         }
 
+        return mUserInfoResponse;
+    }
 
-        return userInfoResponse;
+    protected void onPostExecute(UserInfoResponse response) {
+
+        if (mServerException != null) {
+            mCallback.onUserInfoRequestCompleted(null, mServerException);
+        } else {
+            mCallback.onUserInfoRequestCompleted(mUserInfoResponse, null);
+
+        }
     }
 
     /**
@@ -84,8 +112,9 @@ public class UserInfoRequest extends AsyncTask<Void, Void, UserInfoResponse> {
 
         /**
          * Handle the flow after userinfo request is completed.
+         *
          * @param userInfoResponse UserInfoResponse
          */
-        void onUserInfoRequestCompleted(UserInfoResponse userInfoResponse);
+        void onUserInfoRequestCompleted(UserInfoResponse userInfoResponse, ServerException ex);
     }
 }

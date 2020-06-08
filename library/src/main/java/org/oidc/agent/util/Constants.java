@@ -47,4 +47,8 @@ public class Constants {
     // Constants related to OIDC logout request.
     public static final String ID_TOKEN_HINT = "id_token_hint";
     public static final String POST_LOGOUT_REDIRECT_URI = "post_logout_redirect_uri";
+
+    // Constants related to AuthState.
+    public static final String STORE_NAME = "AuthState";
+    public static final String KEY_STATE = "state";
 }

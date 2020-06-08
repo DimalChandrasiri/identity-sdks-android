@@ -26,7 +26,7 @@ public class ClientException extends Throwable {
     private String message;
 
     public ClientException(String msg) {
-
+        this.message = msg;
     }
 
     public ClientException(String msg, Exception e) {

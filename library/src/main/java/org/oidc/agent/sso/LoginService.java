@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
+// TODO:discuss on package name
 package org.oidc.agent.sso;
 
 import android.app.PendingIntent;
@@ -29,21 +29,22 @@ import androidx.browser.customtabs.CustomTabsIntent;
 
 import net.openid.appauth.AuthState;
 import net.openid.appauth.AuthorizationRequest;
-import net.openid.appauth.AuthorizationResponse;
 import net.openid.appauth.AuthorizationService;
 import net.openid.appauth.AuthorizationServiceConfiguration;
 import net.openid.appauth.ResponseTypeValues;
 import okio.Okio;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.oidc.agent.config.Configuration;
 import org.oidc.agent.exception.ClientException;
 import org.oidc.agent.exception.ServerException;
-import org.oidc.agent.util.ConfigManager;
+import org.oidc.agent.config.FileBasedConfiguration;
 import org.oidc.agent.util.Constants;
 import org.oidc.agent.util.Util;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -54,26 +55,42 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
+//TODO: Inteface
+
 /**
  * Handles the login process by making use of AppAuth library.
  */
 public class LoginService {
 
     private final AtomicReference<CustomTabsIntent> customTabIntent = new AtomicReference<>();
-    private ConfigManager mConfigManager;
+    private Configuration mConfiguration;
     private Context mContext;
     private OAuth2TokenResponse mOAuth2TokenResponse;
     private AuthorizationService mAuthorizationService;
     private static final String LOG_TAG = "LoginService";
-    private AuthState mAuthState;
-    private static LoginService mLoginService;
     private OAuthDiscoveryResponse mDiscovery;
+    private StateManager mStateManager;
+
+    private static final AtomicReference<WeakReference<LoginService>> INSTANCE_REF =
+            new AtomicReference<>(new WeakReference<LoginService>(null));
 
     private LoginService(Context context) throws ClientException {
 
+        //ToDO: configuration object
         mContext = context;
-        if (mConfigManager == null) {
-            mConfigManager = ConfigManager.getInstance(context);
+        mConfiguration = FileBasedConfiguration.getInstance(context);
+        mStateManager = StateManager.getInstance(context.getApplicationContext());
+
+    }
+
+    private LoginService(Context context, Configuration configuration) throws ClientException {
+
+        if(mConfiguration == null){
+            new LoginService(context);
+        } else{
+            mConfiguration = configuration;
+            mContext = context;
+            mStateManager = StateManager.getInstance(context.getApplicationContext());
         }
     }
 
@@ -85,21 +102,41 @@ public class LoginService {
      */
     public static LoginService getInstance(@NonNull Context context) throws ClientException {
 
-        if (mLoginService == null) {
-            mLoginService = new LoginService(context);
+        LoginService loginService = INSTANCE_REF.get().get();
+        if (loginService == null) {
+            loginService = new LoginService(context);
+            INSTANCE_REF.set(new WeakReference<>(loginService));
+        } else if (loginService.mContext == null) {
+            loginService.mContext = context;
         }
-        return mLoginService;
+        return loginService;
     }
+
+    public static LoginService getInstance(@NonNull Context context, Configuration configuration) throws ClientException {
+        //Accepting ConfigurationObject or ConfigManager
+        LoginService loginService = INSTANCE_REF.get().get();
+        if (loginService == null) {
+            loginService = new LoginService(context, configuration);
+            INSTANCE_REF.set(new WeakReference<>(loginService));
+        } else if (loginService.mContext == null) {
+            loginService.mContext = context;
+        }
+        return loginService;
+
+    }
+
+
 
     /**
      * Handles the authorization flow by getting the endpoints from discovery service.
-     *
-     * @param completionIntent
-     * @param cancelIntent
+     * TODO: catch the errors and pass it to failure intent.
+     * @param successIntent successIntent.
+     * @param failureIntent failureIntent.
      */
-    public void doAuthorization(PendingIntent completionIntent, PendingIntent cancelIntent) {
+    public void authorize(PendingIntent successIntent, PendingIntent failureIntent) {
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
+        mOAuth2TokenResponse = new OAuth2TokenResponse();
         executor.submit(() -> {
             try {
                 mDiscovery = callDiscoveryUri();
@@ -108,7 +145,9 @@ public class LoginService {
             } catch (ClientException e) {
                 Log.e(LOG_TAG, e.getMessage());
             }
-            authorizeRequest(completionIntent, cancelIntent);
+            authorizeRequest(TokenManagementActivity.createStartIntent(mContext, successIntent,
+                    failureIntent, mOAuth2TokenResponse),
+                    failureIntent);
         });
     }
 
@@ -125,9 +164,9 @@ public class LoginService {
         URL discoveryEndpoint;
 
         try {
-            Log.d(LOG_TAG, "Call discovery service of identity server via: " + mConfigManager
+            Log.d(LOG_TAG, "Call discovery service of identity server via: " + mConfiguration
                     .getDiscoveryUri().toString());
-            discoveryEndpoint = new URL(mConfigManager.getDiscoveryUri().toString());
+            discoveryEndpoint = new URL(mConfiguration.getDiscoveryUri().toString());
             conn = (HttpURLConnection) discoveryEndpoint.openConnection();
             conn.setRequestMethod(Constants.HTTP_GET);
             conn.setDoInput(true);
@@ -164,11 +203,10 @@ public class LoginService {
             AuthorizationServiceConfiguration serviceConfiguration = new AuthorizationServiceConfiguration(
                     mDiscovery.getAuthorizationEndpoint(), mDiscovery.getTokenEndpoint());
 
-            mAuthState = new AuthState(serviceConfiguration);
             AuthorizationRequest.Builder builder = new AuthorizationRequest.Builder(
-                    serviceConfiguration, mConfigManager.getClientId(), ResponseTypeValues.CODE,
-                    mConfigManager.getRedirectUri());
-            builder.setScopes(mConfigManager.getScope());
+                    serviceConfiguration, mConfiguration.getClientId(), ResponseTypeValues.CODE,
+                    mConfiguration.getRedirectUri());
+            builder.setScopes(mConfiguration.getScope());
             AuthorizationRequest request = builder.build();
             mAuthorizationService = new AuthorizationService(mContext);
             CustomTabsIntent.Builder intentBuilder = mAuthorizationService
@@ -177,25 +215,10 @@ public class LoginService {
             mAuthorizationService
                     .performAuthorizationRequest(request, completionIntent, cancelIntent,
                             customTabIntent.get());
-            Log.d(LOG_TAG, "Handling authorization request for service provider :" + mConfigManager
+            Log.d(LOG_TAG, "Handling authorization request for service provider :" + mConfiguration
                     .getClientId());
+
         }
-    }
-
-    /**
-     * Handle the token request.
-     *
-     * @param intent   intent.
-     * @param callback callback.
-     */
-    public void handleAuthorization(Intent intent, TokenRequest.TokenRespCallback callback) {
-
-        AuthorizationResponse response = AuthorizationResponse.fromIntent(intent);
-        mOAuth2TokenResponse = new OAuth2TokenResponse();
-        new TokenRequest(mAuthorizationService, mOAuth2TokenResponse, response, callback).execute();
-        Log.d(LOG_TAG,
-                "Handling token request for service provider :" + mConfigManager.getClientId());
-
     }
 
     /**
@@ -208,21 +231,36 @@ public class LoginService {
         Map<String, String> paramMap = new HashMap<>();
         paramMap.put(Constants.ID_TOKEN_HINT, mOAuth2TokenResponse.getIdToken());
         paramMap.put(Constants.POST_LOGOUT_REDIRECT_URI,
-                mConfigManager.getRedirectUri().toString());
+                mConfiguration.getRedirectUri().toString());
+        clearAuthState();
         try {
             String url = Util
                     .buildURLWithQueryParams(mDiscovery.getLogoutEndpoint().toString(), paramMap);
-            Log.d(LOG_TAG, "Handling logout request for service provider :" + mConfigManager
+            Log.d(LOG_TAG, "Handling logout request for service provider :" + mConfiguration
                     .getClientId());
             CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
             CustomTabsIntent customTabsIntent = builder.build();
             customTabsIntent.intent.setFlags(
                     Intent.FLAG_ACTIVITY_NO_HISTORY | Intent.FLAG_ACTIVITY_NEW_TASK
                             | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            //TODO: check whether do we need context object here.
             customTabsIntent.launchUrl(context, Uri.parse(url));
         } catch (UnsupportedEncodingException e) {
             Log.e(LOG_TAG, "Error while creating logout request", e);
         }
+    }
+
+    private void clearAuthState(){
+
+        AuthState currentState = mStateManager.getCurrentAuthState();
+        AuthState clearedState =
+                new AuthState(currentState.getAuthorizationServiceConfiguration());
+
+        if (currentState.getLastRegistrationResponse() != null) {
+            clearedState.update(currentState.getLastRegistrationResponse());
+        }
+
+        mStateManager.replaceAuthState(clearedState);
     }
 
     /**
@@ -240,7 +278,11 @@ public class LoginService {
      */
     public void getUserInfo(UserInfoRequest.UserInfoResponseCallback callback) {
 
-        new UserInfoRequest(mDiscovery, mOAuth2TokenResponse.getAccessToken(), callback).execute();
+        if(mStateManager.getCurrentAuthState().isAuthorized()) {
+            new UserInfoRequest(mContext, mDiscovery, callback).execute();
+        } else{
+            Log.e(LOG_TAG, "User does not have a authenticated session");
+        }
     }
 
     /**
@@ -260,7 +302,8 @@ public class LoginService {
      */
     public boolean isUserLoggedIn() {
 
-        return mAuthState.isAuthorized() && !mConfigManager.hasConfigurationChanged()
-                && mAuthState.getAuthorizationServiceConfiguration() != null;
+        return mStateManager.getCurrentAuthState().isAuthorized() &&
+                mStateManager.getCurrentAuthState().getAuthorizationServiceConfiguration() != null;
+
     }
 }

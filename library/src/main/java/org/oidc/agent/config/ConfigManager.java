@@ -16,23 +16,9 @@
  * under the License.
  */
 
-package org.oidc.agent.exception;
+package org.oidc.agent.config;
 
-/**
- * Handles the exception thrown from server side.
- */
-public class ServerException extends Throwable {
+public interface ConfigManager {
 
-    private String message;
-
-    public ServerException(String msg) {
-        this.message = msg;
-    }
-
-    public ServerException(String msg, Exception e) {
-    }
-
-    public String getMessage() {
-        return message;
-    }
+    Configuration getConfiguration();
 }
