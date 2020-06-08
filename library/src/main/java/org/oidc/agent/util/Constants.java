@@ -48,7 +48,10 @@ public class Constants {
     public static final String ID_TOKEN_HINT = "id_token_hint";
     public static final String POST_LOGOUT_REDIRECT_URI = "post_logout_redirect_uri";
 
-    // Constants related to AuthState.
-    public static final String STORE_NAME = "AuthState";
-    public static final String KEY_STATE = "state";
+    // Constants related to State.
+    public static final String AUTH_STORE_NAME = "AuthState";
+    public static final String USER_STORE_NAME = "USerState";
+    public static final String AUTH_STATE = "authState";
+    public static final String USER_STATE = "userState";
+    public static final String KEY_LAST_USERINFO_RESPONSE = "lastUserinfoResponse";
 }

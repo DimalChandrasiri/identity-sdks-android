@@ -35,9 +35,10 @@ import net.openid.appauth.TokenResponse;
 
 import org.json.JSONException;
 
-import static org.oidc.agent.util.Constants.KEY_STATE;
-import static org.oidc.agent.util.Constants.STORE_NAME;
-
+import static org.oidc.agent.util.Constants.AUTH_STATE;
+import static org.oidc.agent.util.Constants.AUTH_STORE_NAME;
+import static org.oidc.agent.util.Constants.USER_STATE;
+import static org.oidc.agent.util.Constants.USER_STORE_NAME;
 
 /**
  * A mechanism for handling the AuthState.
@@ -47,7 +48,8 @@ public class StateManager {
     private static final AtomicReference<WeakReference<StateManager>> INSTANCE_REF =
             new AtomicReference<>(new WeakReference<StateManager>(null));
 
-    private final SharedPreferences prefs;
+    private final SharedPreferences authPrefs;
+    private final SharedPreferences userPrefs;
     private final AtomicReference<AuthState> currentAuthState;
     private final AtomicReference<UserInfoState> currentuserinfoState;
 
@@ -56,7 +58,8 @@ public class StateManager {
 
     private StateManager(Context context) {
 
-        prefs = context.getSharedPreferences(STORE_NAME, Context.MODE_PRIVATE);
+        authPrefs = context.getSharedPreferences(AUTH_STORE_NAME, Context.MODE_PRIVATE);
+        userPrefs = context.getSharedPreferences(USER_STORE_NAME, Context.MODE_PRIVATE);
         currentAuthState = new AtomicReference<>();
         currentuserinfoState = new AtomicReference<>();
     }
@@ -70,13 +73,13 @@ public class StateManager {
     @AnyThread
     public static StateManager getInstance(@NonNull Context context) {
 
-        StateManager manager = INSTANCE_REF.get().get();
-        if (manager == null) {
-            manager = new StateManager(context.getApplicationContext());
-            INSTANCE_REF.set(new WeakReference<>(manager));
+        StateManager stateManager = INSTANCE_REF.get().get();
+        if (stateManager == null) {
+            stateManager = new StateManager(context.getApplicationContext());
+            INSTANCE_REF.set(new WeakReference<>(stateManager));
         }
 
-        return manager;
+        return stateManager;
     }
 
     /**
@@ -153,12 +156,11 @@ public class StateManager {
     private AuthState readAuthState() {
 
         AuthState auth;
-        String currentState = prefs.getString(KEY_STATE, null);
+        String currentState = authPrefs.getString(AUTH_STATE, null);
         if (currentState == null) {
             auth = new AuthState();
         } else {
             try {
-                Log.i(TAG, "HIIII");
                 auth = AuthState.jsonDeserialize(currentState);
             } catch (JSONException ex) {
                 Log.e(TAG, "Failed to deserialize stored auth state - discarding: ", ex);
@@ -176,18 +178,21 @@ public class StateManager {
     @AnyThread
     private void writeAuthState(@Nullable AuthState state) {
 
-        SharedPreferences.Editor editor = prefs.edit();
+        SharedPreferences.Editor editor = authPrefs.edit();
         if (state == null) {
-            editor.remove(KEY_STATE);
+            editor.remove(AUTH_STATE);
         } else {
-            editor.putString(KEY_STATE, state.jsonSerializeString());
+            editor.putString(AUTH_STATE, state.jsonSerializeString());
         }
         if (!editor.commit()) {
             Log.e(TAG, "Failed to write state to shared prefs.");
         }
     }
 
-
+    /**
+     * Get current state of userinfo.
+     * @return
+     */
     @AnyThread
     public UserInfoState getCurrentUserState() {
 
@@ -197,36 +202,59 @@ public class StateManager {
         if (currentuserinfoState.get() != null) {
             current = currentuserinfoState.get();
         } else{
-            current = new UserInfoState();
+            UserInfoState state =  readUserState();
+            if (currentuserinfoState.compareAndSet(null, state)) {
+                current = state;
+            } else {
+                current = currentuserinfoState.get();
+            }
         }
         return current;
     }
 
-    public UserInfoState updateAfterUserInfoState(UserInfoResponse response) {
+    /**
+     * Read the userinfo state.
+     * @return
+     */
+    private UserInfoState readUserState() {
 
-        Log.i(TAG, "updateUserInfoState");
+        Log.i(TAG, "read staTE");
+        UserInfoState userInfoState;
+        String currentState = userPrefs.getString(USER_STATE, null);
+        if (currentState == null) {
+            userInfoState = new UserInfoState();
+        } else {
+            try {
+                userInfoState = UserInfoState.jsonDeserialize(currentState);
+            } catch (JSONException ex) {
+                Log.e(TAG, "Failed to deserialize stored auth state - discarding: ", ex);
+                userInfoState = new UserInfoState();
+            }
+        }
+        return userInfoState;
+    }
+
+    /**
+     * Update the userinfo state.
+     * @param response UserInfoResponse
+     * @return UserinfoState
+     */
+    public void updateAfterUserInfoState(UserInfoResponse response) {
+
         UserInfoState current = getCurrentUserState();
         current.update(response);
-        replaceUserState(current);
-        return current;
+        writeUserState(current);
+        currentuserinfoState.set(current);
     }
 
-
-    public void replaceUserState(@NonNull UserInfoState state) {
-
-        Log.i(TAG, "ReplaceUserInfoState");
-        writeUserState(state);
-        currentuserinfoState.set(state);
-    }
 
     private void writeUserState(@Nullable UserInfoState state) {
 
-        Log.i(TAG, "writeUserInfoState");
-        SharedPreferences.Editor editor = prefs.edit();
+        SharedPreferences.Editor editor = userPrefs.edit();
         if (state == null) {
-            editor.remove(KEY_STATE);
+            editor.remove(USER_STATE);
         } else {
-            editor.putString(KEY_STATE, state.jsonSerializeString());
+            editor.putString(USER_STATE, state.jsonSerializeString());
         }
         if (!editor.commit()) {
             Log.e(TAG, "Failed to write state to shared prefs.");

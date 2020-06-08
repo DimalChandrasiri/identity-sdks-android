@@ -24,6 +24,7 @@ import android.util.Log;
 import okio.Okio;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.oidc.agent.exception.ClientException;
 import org.oidc.agent.exception.ServerException;
 import org.oidc.agent.util.Constants;
 
@@ -35,7 +36,7 @@ import java.nio.charset.Charset;
 
 public class UserInfoRequest extends AsyncTask<Void, Void, UserInfoResponse> {
 
-    private OAuthDiscoveryResponse mDiscovery;
+    private OIDCDiscoveryResponse mDiscovery;
     private UserInfoResponseCallback mCallback;
     private ServerException mServerException;
     private UserInfoResponse mUserInfoResponse;
@@ -44,7 +45,7 @@ public class UserInfoRequest extends AsyncTask<Void, Void, UserInfoResponse> {
     private static final String LOG_TAG = "UserInfoRequest";
 
 
-    UserInfoRequest(Context context, OAuthDiscoveryResponse discovery,
+    UserInfoRequest(Context context, OIDCDiscoveryResponse discovery,
             UserInfoResponseCallback callback) {
 
         this.mDiscovery = discovery;
@@ -63,15 +64,19 @@ public class UserInfoRequest extends AsyncTask<Void, Void, UserInfoResponse> {
 
         } else {
             try {
+                if(mDiscovery == null) {
+                    throw new ClientException("DiscoveryResponse is null. Reinitiate the "
+                            + "authentication");
+                }
                 String accessToken = mStateManager.getCurrentAuthState().getAccessToken();
                 URL userInfoEndpoint = new URL(mDiscovery.getUserInfoEndpoint().toString());
-                Log.d(LOG_TAG, "Call userinfo endpoint: " + mDiscovery.getUserInfoEndpoint().toString());
 
                 HttpURLConnection conn = (HttpURLConnection) userInfoEndpoint.openConnection();
                 conn.setRequestProperty(Constants.AUTHORIZATION, Constants.BEARER + accessToken);
                 conn.setInstanceFollowRedirects(false);
                 String response = Okio.buffer(Okio.source(conn.getInputStream()))
                         .readString(Charset.forName("UTF-8"));
+                Log.d(LOG_TAG, "Call userinfo endpoint: "+ userInfoEndpoint);
 
                 JSONObject json = new JSONObject(response);
                 mUserInfoResponse = new UserInfoResponse(json);
@@ -89,6 +94,10 @@ public class UserInfoRequest extends AsyncTask<Void, Void, UserInfoResponse> {
                 String error = "Error while getting response from userinfo endpoint";
                 Log.e(LOG_TAG, error);
                 mServerException = new ServerException(error, e);
+            } catch (ClientException e){
+                String error = "Error while calling from userinfo endpoint";
+                Log.e(LOG_TAG, error);
+                mServerException = new ServerException(error);
             }
         }
 
@@ -101,7 +110,6 @@ public class UserInfoRequest extends AsyncTask<Void, Void, UserInfoResponse> {
             mCallback.onUserInfoRequestCompleted(null, mServerException);
         } else {
             mCallback.onUserInfoRequestCompleted(mUserInfoResponse, null);
-
         }
     }
 

@@ -19,6 +19,8 @@
 package org.oidc.agent.sso;
 
 import android.util.Log;
+import androidx.annotation.NonNull;
+import net.openid.appauth.AuthorizationRequest;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.oidc.agent.util.Constants;
@@ -67,5 +69,13 @@ public class UserInfoResponse {
 
         Log.d(LOG_TAG, "Get all claim information from userinfo response");
         return mUserInfoResponse;
+    }
+
+    public static UserInfoResponse jsonDeserialize(@NonNull JSONObject json)
+            throws JSONException {
+
+        JSONObject response = (JSONObject) json.get(Constants.KEY_LAST_USERINFO_RESPONSE);
+        Log.i(LOG_TAG, response.toString());
+        return  new UserInfoResponse(response);
     }
 }

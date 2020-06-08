@@ -18,11 +18,6 @@
 
 package org.oidc.agent.sso;
 
-import android.content.Intent;
-import androidx.annotation.NonNull;
-import net.openid.appauth.TokenResponse;
-import org.json.JSONObject;
-
 /**
  * This class contains the TokenResponse.
  */
@@ -33,10 +28,6 @@ public class OAuth2TokenResponse {
     private Long mAccessTokenExpirationTime;
     private String mIdToken;
     private String mRefreshToken;
-
-    OAuth2TokenResponse(){
-
-    }
 
     public void setIdToken(String idToken) {
         this.mIdToken = idToken;

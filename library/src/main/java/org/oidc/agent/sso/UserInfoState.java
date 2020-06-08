@@ -18,10 +18,15 @@
 
 package org.oidc.agent.sso;
 
+import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import net.openid.appauth.AuthState;
+import org.json.JSONException;
 import org.json.JSONObject;
+import org.oidc.agent.util.Constants;
+
+import static net.openid.appauth.Preconditions.checkNotEmpty;
 
 public class UserInfoState extends AuthState {
 
@@ -31,6 +36,8 @@ public class UserInfoState extends AuthState {
 
     private UserInfoResponse mLastUserInfoResponse;
 
+    private OIDCDiscoveryResponse mLastDiscoveryResponse;
+
     public void update(@Nullable UserInfoResponse userInfoResponse) {
         mLastUserInfoResponse = userInfoResponse;
     }
@@ -39,11 +46,56 @@ public class UserInfoState extends AuthState {
         return mLastUserInfoResponse;
     }
 
+    public void update(@Nullable OIDCDiscoveryResponse discoveryResponse) {
+        mLastDiscoveryResponse = discoveryResponse;
+    }
+
+    public OIDCDiscoveryResponse getLastDiscoveryResponse() {
+        return mLastDiscoveryResponse;
+    }
+
     public String jsonSerializeString() {
         return jsonSerialize().toString();
     }
 
     public JSONObject jsonSerialize() {
-        return mLastUserInfoResponse.getUserInfoProperties();
+        JSONObject json = new JSONObject();
+        if (mLastUserInfoResponse != null) {
+            put(json, Constants.KEY_LAST_USERINFO_RESPONSE,
+                    mLastUserInfoResponse.getUserInfoProperties());
+        }
+        return json;
     }
+
+    public static UserInfoState jsonDeserialize(@NonNull String jsonStr) throws JSONException {
+        checkNotEmpty(jsonStr, "jsonStr cannot be null or empty");
+        return jsonDeserialize(new JSONObject(jsonStr));
+    }
+
+    public static UserInfoState jsonDeserialize(JSONObject json) {
+
+        UserInfoState state = new UserInfoState();
+        Log.i("User Info State", json.toString());
+        if (json.has(Constants.KEY_LAST_USERINFO_RESPONSE)) {
+            try {
+                state.mLastUserInfoResponse = UserInfoResponse.jsonDeserialize(json);
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+        }
+        return state;
+    }
+
+    public static void put(@NonNull JSONObject json, @NonNull String field,
+            @NonNull JSONObject value) {
+
+        try {
+            json.put(field, value);
+        } catch (JSONException ex) {
+            throw new IllegalStateException("JSONException thrown", ex);
+        }
+    }
+
 }

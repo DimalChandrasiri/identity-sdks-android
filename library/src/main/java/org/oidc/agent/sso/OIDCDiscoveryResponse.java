@@ -27,12 +27,12 @@ import org.oidc.agent.util.Constants;
 /**
  * This class stores the discovery response.
  */
-public class OAuthDiscoveryResponse {
+public class OIDCDiscoveryResponse {
 
     private JSONObject mDiscoveryResponse;
     static final String LOG_TAG = "OAuthDiscoveryResponse";
 
-    public OAuthDiscoveryResponse(JSONObject discoveryResponse) {
+    public OIDCDiscoveryResponse(JSONObject discoveryResponse) {
 
         mDiscoveryResponse = discoveryResponse;
     }
