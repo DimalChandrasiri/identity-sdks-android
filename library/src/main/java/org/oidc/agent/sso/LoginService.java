@@ -127,15 +127,15 @@ public class LoginService {
         new OIDCDiscoveryRequest(mConfiguration.getDiscoveryUri().toString(),
                 (exception, oidcDiscoveryResponse) -> {
                     if (exception != null) {
-                        Log.i(LOG_TAG, "exception");
+                        Log.i(LOG_TAG, "Error while calling discovery endpoint");
                     } else {
-                        Log.i(LOG_TAG, "No exception");
+                        mDiscovery = oidcDiscoveryResponse;
+                        Log.i(LOG_TAG, oidcDiscoveryResponse.getAuthorizationEndpoint().toString());
+                        authorizeRequest(TokenManagementActivity
+                                .createStartIntent(mContext.get(), successIntent, failureIntent,
+                                        mOAuth2TokenResponse), failureIntent);
                     }
-                    mDiscovery = oidcDiscoveryResponse;
-                    Log.i(LOG_TAG, oidcDiscoveryResponse.getAuthorizationEndpoint().toString());
-                    authorizeRequest(TokenManagementActivity
-                            .createStartIntent(mContext.get(), successIntent, failureIntent,
-                                    mOAuth2TokenResponse), failureIntent);
+
                 }).execute();
     }
 
@@ -177,6 +177,9 @@ public class LoginService {
     public void logout() {
 
         Map<String, String> paramMap = new HashMap<>();
+        if (mOAuth2TokenResponse == null) {
+            mOAuth2TokenResponse = getTokenResponse();
+        }
         paramMap.put(Constants.ID_TOKEN_HINT, mOAuth2TokenResponse.getIdToken());
         paramMap.put(Constants.POST_LOGOUT_REDIRECT_URI,
                 mConfiguration.getRedirectUri().toString());
@@ -232,7 +235,8 @@ public class LoginService {
                 response.setTokenType(tokenResponse.tokenType);
                 mOAuth2TokenResponse = response;
 
-            } return mOAuth2TokenResponse;
+            }
+            return mOAuth2TokenResponse;
         } else {
             return null;
         }
