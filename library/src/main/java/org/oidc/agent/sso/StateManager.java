@@ -52,7 +52,6 @@ public class StateManager {
     private final SharedPreferences userPrefs;
     private final AtomicReference<AuthState> currentAuthState;
     private final AtomicReference<UserInfoState> currentuserinfoState;
-
     private final String TAG = StateManager.class.getSimpleName();
 
 
@@ -196,8 +195,6 @@ public class StateManager {
     @AnyThread
     public UserInfoState getCurrentUserState() {
 
-        Log.i(TAG, "getCurrentUserState");
-
         UserInfoState current = null;
         if (currentuserinfoState.get() != null) {
             current = currentuserinfoState.get();
@@ -218,7 +215,6 @@ public class StateManager {
      */
     private UserInfoState readUserState() {
 
-        Log.i(TAG, "read staTE");
         UserInfoState userInfoState;
         String currentState = userPrefs.getString(USER_STATE, null);
         if (currentState == null) {
