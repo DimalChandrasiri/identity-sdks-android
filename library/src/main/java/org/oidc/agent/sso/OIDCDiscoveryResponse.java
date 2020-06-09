@@ -30,7 +30,7 @@ import org.oidc.agent.util.Constants;
 public class OIDCDiscoveryResponse {
 
     private JSONObject mDiscoveryResponse;
-    static final String LOG_TAG = "OAuthDiscoveryResponse";
+    private static final String LOG_TAG = "OAuthDiscoveryResponse";
 
     public OIDCDiscoveryResponse(JSONObject discoveryResponse) {
 
@@ -55,7 +55,7 @@ public class OIDCDiscoveryResponse {
      */
     public Uri getAuthorizationEndpoint() {
 
-        Log.i(LOG_TAG, "Get authorization endpoint");
+        Log.d(LOG_TAG, "Get authorization endpoint");
         return getRequiredUri(Constants.AUTHORIZATION_ENDPOINT);
     }
 

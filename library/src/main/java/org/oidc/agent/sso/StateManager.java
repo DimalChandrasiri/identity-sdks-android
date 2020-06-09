@@ -45,11 +45,10 @@ import static org.oidc.agent.util.Constants.USER_STORE_NAME;
  */
 public class StateManager {
 
-    private static final AtomicReference<WeakReference<StateManager>> INSTANCE_REF = new AtomicReference<>(
+    private static final AtomicReference<WeakReference<StateManager>> STATE_MANAGER_REF = new AtomicReference<>(
             new WeakReference<StateManager>(null));
 
     private final SharedPreferences authPrefs;
-    private final SharedPreferences userPrefs;
     private final AtomicReference<AuthState> currentAuthState;
     private final AtomicReference<UserInfoState> currentuserinfoState;
     private final String TAG = StateManager.class.getSimpleName();
@@ -57,7 +56,6 @@ public class StateManager {
     private StateManager(Context context) {
 
         authPrefs = context.getSharedPreferences(AUTH_STORE_NAME, Context.MODE_PRIVATE);
-        userPrefs = context.getSharedPreferences(USER_STORE_NAME, Context.MODE_PRIVATE);
         currentAuthState = new AtomicReference<>();
         currentuserinfoState = new AtomicReference<>();
     }
@@ -71,10 +69,10 @@ public class StateManager {
     @AnyThread
     public static StateManager getInstance(@NonNull Context context) {
 
-        StateManager stateManager = INSTANCE_REF.get().get();
+        StateManager stateManager = STATE_MANAGER_REF.get().get();
         if (stateManager == null) {
             stateManager = new StateManager(context.getApplicationContext());
-            INSTANCE_REF.set(new WeakReference<>(stateManager));
+            STATE_MANAGER_REF.set(new WeakReference<>(stateManager));
         }
 
         return stateManager;
@@ -219,7 +217,7 @@ public class StateManager {
     private UserInfoState readUserState() {
 
         UserInfoState userInfoState;
-        String currentState = userPrefs.getString(USER_STATE, null);
+        String currentState = authPrefs.getString(USER_STATE, null);
         if (currentState == null) {
             userInfoState = new UserInfoState();
         } else {
@@ -256,7 +254,7 @@ public class StateManager {
     @AnyThread
     private void writeUserState(@Nullable UserInfoState state) {
 
-        SharedPreferences.Editor editor = userPrefs.edit();
+        SharedPreferences.Editor editor = authPrefs.edit();
         if (state == null) {
             editor.remove(USER_STATE);
         } else {

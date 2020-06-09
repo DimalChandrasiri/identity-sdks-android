@@ -41,8 +41,6 @@ import org.oidc.agent.exception.ClientException;
 import org.oidc.agent.library.R;
 import org.oidc.agent.util.Constants;
 
-//TODO: Rename to FileBasedConfigManager. inmplement
-
 /**
  * Reads and validates the configuration from res/raw/oidc_config.json file.
  */
@@ -50,7 +48,6 @@ public class FileBasedConfiguration implements Configuration {
 
     private static WeakReference<FileBasedConfiguration> sInstance = new WeakReference<>(null);
 
-    private final Context mContext;
     private final Resources mResources;
 
     private JSONObject mConfigJson;
@@ -61,9 +58,8 @@ public class FileBasedConfiguration implements Configuration {
 
     private static final String LOG_TAG = "FileBasedConfiguration";
 
-    public FileBasedConfiguration(Context context) throws ClientException {
+    private FileBasedConfiguration(Context context) throws ClientException {
 
-        this.mContext = context;
         this.mResources = context.getResources();
         readConfiguration(R.raw.oidc_config);
     }
@@ -133,7 +129,7 @@ public class FileBasedConfiguration implements Configuration {
     /**
      * Reads the configuration values.
      */
-    public void readConfiguration(int rawid) throws ClientException {
+    private void readConfiguration(int rawid) throws ClientException {
 
         BufferedSource configSource = Okio.buffer(Okio.source(mResources.openRawResource(rawid)));
         Buffer configData = new Buffer();
@@ -180,7 +176,7 @@ public class FileBasedConfiguration implements Configuration {
     /**
      * Returns Config URI.
      *
-     * @param endpoint
+     * @param endpoint Endpoint
      * @return Uri
      */
     private Uri getRequiredUri(String endpoint) throws ClientException {

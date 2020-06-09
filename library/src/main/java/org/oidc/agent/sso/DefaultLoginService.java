@@ -45,6 +45,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+//ToDO: Model hold userinfo response,userinfo: hold login service
+//
+
 /**
  * Handles the login process by making use of AppAuth library.
  */
@@ -209,7 +212,6 @@ public class DefaultLoginService implements LoginService {
         AuthState currentState = mStateManager.getCurrentAuthState();
         if (currentState.getAuthorizationServiceConfiguration() != null) {
             AuthState clearedState = new AuthState();
-
             mStateManager.replaceAuthState(clearedState);
         }
     }
@@ -236,9 +238,8 @@ public class DefaultLoginService implements LoginService {
 
             }
             return mOAuth2TokenResponse;
-        } else {
-            return null;
         }
+        return null;
     }
 
     /**
@@ -246,10 +247,10 @@ public class DefaultLoginService implements LoginService {
      *
      * @param callback UserInfoResponseCallback.
      */
-    public void getUserInfo(UserInfoRequest.UserInfoResponseCallback callback) {
+    public void getUserInfo(UserInfoRequestHandler.UserInfoResponseCallback callback) {
 
         if (mStateManager.getCurrentAuthState().isAuthorized()) {
-            new UserInfoRequest(mContext.get(), mDiscovery, callback).execute();
+            new UserInfoRequestHandler(mContext.get(), mDiscovery, callback).execute();
         } else {
             Log.e(LOG_TAG, "User does not have a authenticated session");
         }
@@ -275,6 +276,5 @@ public class DefaultLoginService implements LoginService {
         return mStateManager.getCurrentAuthState().isAuthorized()
                 && mStateManager.getCurrentAuthState().getAuthorizationServiceConfiguration()
                 != null;
-
     }
 }

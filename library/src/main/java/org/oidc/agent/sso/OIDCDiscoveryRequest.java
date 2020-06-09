@@ -43,7 +43,6 @@ public class OIDCDiscoveryRequest extends AsyncTask<Void, Void, OIDCDiscoveryRes
     private OIDCDiscoveryRespCallback mCallback;
     private static final String LOG_TAG = "OIDCDiscoveryRequest";
     private Exception exception;
-    private OIDCDiscoveryResponse discoveryResponse;
 
     OIDCDiscoveryRequest(String discoveryEndpoint, OIDCDiscoveryRespCallback callback) {
         this.mDiscoveryEndpoint = discoveryEndpoint;
@@ -93,7 +92,7 @@ public class OIDCDiscoveryRequest extends AsyncTask<Void, Void, OIDCDiscoveryRes
                         + "calling discovery endpoint");
             }
             JSONObject jsonResponse = new JSONObject(response);
-            discoveryResponse = new OIDCDiscoveryResponse(jsonResponse);
+            OIDCDiscoveryResponse discoveryResponse = new OIDCDiscoveryResponse(jsonResponse);
             Log.i(LOG_TAG, discoveryResponse.getLogoutEndpoint().toString());
             return discoveryResponse;
 
@@ -112,7 +111,6 @@ public class OIDCDiscoveryRequest extends AsyncTask<Void, Void, OIDCDiscoveryRes
     protected void onPostExecute(OIDCDiscoveryResponse response) {
 
         if (exception != null) {
-            Log.i(LOG_TAG, "Test");
             mCallback.onDiscoveryRequestCompleted(exception, null);
         } else {
             mCallback.onDiscoveryRequestCompleted(null, response);

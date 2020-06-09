@@ -34,7 +34,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 
-public class UserInfoRequest extends AsyncTask<Void, Void, UserInfoResponse> {
+//TODO :Renar
+public class UserInfoRequestHandler extends AsyncTask<Void, Void, UserInfoResponse> {
 
     private OIDCDiscoveryResponse mDiscovery;
     private UserInfoResponseCallback mCallback;
@@ -44,7 +45,7 @@ public class UserInfoRequest extends AsyncTask<Void, Void, UserInfoResponse> {
 
     private static final String LOG_TAG = "UserInfoRequest";
 
-    UserInfoRequest(Context context, OIDCDiscoveryResponse discovery,
+    UserInfoRequestHandler(Context context, OIDCDiscoveryResponse discovery,
             UserInfoResponseCallback callback) {
 
         this.mDiscovery = discovery;

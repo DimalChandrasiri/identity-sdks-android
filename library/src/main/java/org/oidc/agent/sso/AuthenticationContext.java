@@ -18,20 +18,5 @@
 
 package org.oidc.agent.sso;
 
-import android.app.PendingIntent;
-
-public interface LoginService {
-
-    void authorize(PendingIntent successIntent, PendingIntent failureIntent);
-
-    void getUserInfo(UserInfoRequestHandler.UserInfoResponseCallback callback);
-
-    OAuth2TokenResponse getTokenResponse();
-
-    boolean isUserLoggedIn();
-
-    void logout();
-
-    void dispose();
+public class AuthenticationContext {
 }
-
