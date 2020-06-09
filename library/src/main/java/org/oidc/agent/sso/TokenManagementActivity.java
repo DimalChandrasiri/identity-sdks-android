@@ -45,6 +45,7 @@ public class TokenManagementActivity extends Activity {
 
     static PendingIntent createStartIntent(Context context, PendingIntent completeIntent,
             PendingIntent cancelIntent, OAuth2TokenResponse response) {
+
         Intent tokenExchangeIntent = new Intent(context, TokenManagementActivity.class);
         tokenExchangeIntent.putExtra(KEY_COMPLETE_INTENT, completeIntent);
         tokenExchangeIntent.putExtra(KEY_CANCEL_INTENT, cancelIntent);
@@ -99,6 +100,7 @@ public class TokenManagementActivity extends Activity {
 
     private void handleTokenResponse(@Nullable TokenResponse tokenResponse,
             @Nullable AuthorizationException exception){
+
         if (exception != null) {
             Log.e(LOG_TAG, "Token Exchange failed", exception);
         } else {
@@ -126,6 +128,7 @@ public class TokenManagementActivity extends Activity {
         }
     }
     private void sendPendingIntent(PendingIntent pendingIntent) {
+
         try {
             pendingIntent.send();
         } catch (PendingIntent.CanceledException e) {
@@ -135,6 +138,7 @@ public class TokenManagementActivity extends Activity {
     }
 
     void extractState(Bundle state) {
+
         if (state == null) {
             Log.d(LOG_TAG, "Cannot handle response");
             finish();
