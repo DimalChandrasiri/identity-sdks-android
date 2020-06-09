@@ -40,15 +40,17 @@ public class UserInfoResponse {
 
     /**
      * Returns the subject value of the userinfo response.
+     *
      * @return subject.
      */
-    public String getSubject(){
+    public String getSubject() {
 
         return getUserInfoProperty(Constants.SUBJECT);
     }
 
     /**
      * Returns the claim values of additional claims returned in the userinfo response.
+     *
      * @param property Additional claim.
      * @return The claim value returned in the userinfo response.
      */
@@ -57,7 +59,7 @@ public class UserInfoResponse {
         String userInfoProperty = null;
         try {
             userInfoProperty = (String) mUserInfoResponse.get(property);
-            Log.d(LOG_TAG, "Get the value for the claim: "+ property +" from userinfo response");
+            Log.d(LOG_TAG, "Get the value for the claim: " + property + " from userinfo response");
 
         } catch (JSONException e) {
 
@@ -71,11 +73,10 @@ public class UserInfoResponse {
         return mUserInfoResponse;
     }
 
-    public static UserInfoResponse jsonDeserialize(@NonNull JSONObject json)
-            throws JSONException {
+    public static UserInfoResponse jsonDeserialize(@NonNull JSONObject json) throws JSONException {
 
         JSONObject response = (JSONObject) json.get(Constants.KEY_LAST_USERINFO_RESPONSE);
         Log.i(LOG_TAG, response.toString());
-        return  new UserInfoResponse(response);
+        return new UserInfoResponse(response);
     }
 }

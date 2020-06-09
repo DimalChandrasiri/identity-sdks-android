@@ -29,5 +29,4 @@ public interface Configuration {
     Uri getRedirectUri();
 
     Uri getDiscoveryUri();
-
 }

@@ -42,7 +42,6 @@ public class TokenManagementActivity extends Activity {
     private static OAuth2TokenResponse sResponse;
     private StateManager mStateManager;
 
-
     static PendingIntent createStartIntent(Context context, PendingIntent completeIntent,
             PendingIntent cancelIntent, OAuth2TokenResponse response) {
 
@@ -99,23 +98,20 @@ public class TokenManagementActivity extends Activity {
     }
 
     private void handleTokenResponse(@Nullable TokenResponse tokenResponse,
-            @Nullable AuthorizationException exception){
+            @Nullable AuthorizationException exception) {
 
         if (exception != null) {
             Log.e(LOG_TAG, "Token Exchange failed", exception);
         } else {
             if (tokenResponse != null) {
-                Log.d(LOG_TAG, String.format(
-                        "Token Response [ Access Token: %s, ID Token: %s ]",
+                Log.d(LOG_TAG, String.format("Token Response [ Access Token: %s, ID Token: %s ]",
                         tokenResponse.accessToken, tokenResponse.idToken));
                 if (mCompleteIntent != null) {
-                    Logger.debug(
-                            "Authorization complete - invoking completion intent");
+                    Logger.debug("Authorization complete - invoking completion intent");
                     sResponse.setAccessToken(tokenResponse.accessToken);
 
                     sResponse.setIdToken(tokenResponse.idToken);
-                    sResponse.setAccessTokenExpirationTime(
-                            tokenResponse.accessTokenExpirationTime);
+                    sResponse.setAccessTokenExpirationTime(tokenResponse.accessTokenExpirationTime);
                     sResponse.setRefreshToken(tokenResponse.refreshToken);
                     sResponse.setTokenType(tokenResponse.tokenType);
                     sendPendingIntent(mCompleteIntent);
@@ -127,6 +123,7 @@ public class TokenManagementActivity extends Activity {
             }
         }
     }
+
     private void sendPendingIntent(PendingIntent pendingIntent) {
 
         try {

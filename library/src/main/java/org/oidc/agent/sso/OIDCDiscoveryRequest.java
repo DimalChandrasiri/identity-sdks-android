@@ -78,8 +78,7 @@ public class OIDCDiscoveryRequest extends AsyncTask<Void, Void, OIDCDiscoveryRes
         URL discoveryEndpoint;
 
         try {
-            Log.d(LOG_TAG,
-                    "Call discovery service of identity server via: " + mDiscoveryEndpoint);
+            Log.d(LOG_TAG, "Call discovery service of identity server via: " + mDiscoveryEndpoint);
             discoveryEndpoint = new URL(mDiscoveryEndpoint);
             conn = (HttpURLConnection) discoveryEndpoint.openConnection();
             conn.setRequestMethod(Constants.HTTP_GET);
@@ -116,9 +115,10 @@ public class OIDCDiscoveryRequest extends AsyncTask<Void, Void, OIDCDiscoveryRes
             Log.i(LOG_TAG, "Test");
             mCallback.onDiscoveryRequestCompleted(exception, null);
         } else {
-            mCallback.onDiscoveryRequestCompleted(null, response );
+            mCallback.onDiscoveryRequestCompleted(null, response);
         }
     }
+
     /**
      * Interface to handle token response.
      */

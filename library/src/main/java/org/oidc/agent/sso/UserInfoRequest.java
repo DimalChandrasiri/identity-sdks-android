@@ -44,7 +44,6 @@ public class UserInfoRequest extends AsyncTask<Void, Void, UserInfoResponse> {
 
     private static final String LOG_TAG = "UserInfoRequest";
 
-
     UserInfoRequest(Context context, OIDCDiscoveryResponse discovery,
             UserInfoResponseCallback callback) {
 
@@ -57,16 +56,16 @@ public class UserInfoRequest extends AsyncTask<Void, Void, UserInfoResponse> {
     @Override
     protected UserInfoResponse doInBackground(Void... voids) {
 
-        if (mStateManager.getCurrentUserState() != null &&
-                mStateManager.getCurrentUserState().getLastUserInfoResponse()!=null) {
+        if (mStateManager.getCurrentUserState() != null
+                && mStateManager.getCurrentUserState().getLastUserInfoResponse() != null) {
             Log.d(LOG_TAG, "There is already a userinfo response is stored");
             mUserInfoResponse = mStateManager.getCurrentUserState().getLastUserInfoResponse();
 
         } else {
             try {
-                if(mDiscovery == null) {
-                    throw new ClientException("DiscoveryResponse is null. Reinitiate the "
-                            + "authentication");
+                if (mDiscovery == null) {
+                    throw new ClientException(
+                            "DiscoveryResponse is null. Reinitiate the " + "authentication");
                 }
                 String accessToken = mStateManager.getCurrentAuthState().getAccessToken();
                 URL userInfoEndpoint = new URL(mDiscovery.getUserInfoEndpoint().toString());
@@ -76,7 +75,7 @@ public class UserInfoRequest extends AsyncTask<Void, Void, UserInfoResponse> {
                 conn.setInstanceFollowRedirects(false);
                 String response = Okio.buffer(Okio.source(conn.getInputStream()))
                         .readString(Charset.forName("UTF-8"));
-                Log.d(LOG_TAG, "Call userinfo endpoint: "+ userInfoEndpoint);
+                Log.d(LOG_TAG, "Call userinfo endpoint: " + userInfoEndpoint);
 
                 JSONObject json = new JSONObject(response);
                 mUserInfoResponse = new UserInfoResponse(json);
@@ -94,7 +93,7 @@ public class UserInfoRequest extends AsyncTask<Void, Void, UserInfoResponse> {
                 String error = "Error while getting response from userinfo endpoint";
                 Log.e(LOG_TAG, error);
                 mServerException = new ServerException(error, e);
-            } catch (ClientException e){
+            } catch (ClientException e) {
                 String error = "Error while calling from userinfo endpoint";
                 Log.e(LOG_TAG, error);
                 mServerException = new ServerException(error);

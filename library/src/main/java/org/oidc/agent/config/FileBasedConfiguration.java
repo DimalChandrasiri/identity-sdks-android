@@ -42,6 +42,7 @@ import org.oidc.agent.library.R;
 import org.oidc.agent.util.Constants;
 
 //TODO: Rename to FileBasedConfigManager. inmplement
+
 /**
  * Reads and validates the configuration from res/raw/oidc_config.json file.
  */
@@ -60,11 +61,10 @@ public class FileBasedConfiguration implements Configuration {
 
     private static final String LOG_TAG = "FileBasedConfiguration";
 
-
     public FileBasedConfiguration(Context context) throws ClientException {
 
         this.mContext = context;
-        this. mResources = context.getResources();
+        this.mResources = context.getResources();
         readConfiguration(R.raw.oidc_config);
     }
 
@@ -196,11 +196,11 @@ public class FileBasedConfiguration implements Configuration {
         }
 
         if (!TextUtils.isEmpty(uri.getEncodedQuery())) {
-            throw new ClientException(endpoint+ " must not have query parameters");
+            throw new ClientException(endpoint + " must not have query parameters");
         }
 
         if (!TextUtils.isEmpty(uri.getEncodedFragment())) {
-            throw new ClientException(endpoint+ " must not have a fragment");
+            throw new ClientException(endpoint + " must not have a fragment");
         }
         return uri;
     }
@@ -213,11 +213,11 @@ public class FileBasedConfiguration implements Configuration {
      */
     private Uri deriveDiscoveryUri(String issuerUri) throws ClientException {
 
-        if(issuerUri.contains(Constants.DISCOVERY_ENDPOINT)){
+        if (issuerUri.contains(Constants.DISCOVERY_ENDPOINT)) {
             Log.d(LOG_TAG, "Discovery endpoint is " + issuerUri);
             return getRequiredUri(issuerUri);
-        }else{
-            String derivedUri = issuerUri+ Constants.DISCOVERY_ENDPOINT;
+        } else {
+            String derivedUri = issuerUri + Constants.DISCOVERY_ENDPOINT;
             Log.d(LOG_TAG, "Discovery endpoint is " + derivedUri);
             return getRequiredUri(derivedUri);
         }

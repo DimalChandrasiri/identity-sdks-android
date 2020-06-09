@@ -33,7 +33,7 @@ public class ClientException extends Throwable {
         this.message = msg;
     }
 
-    public String getMessage(){
-       return message;
+    public String getMessage() {
+        return message;
     }
 }

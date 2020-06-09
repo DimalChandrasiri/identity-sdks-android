@@ -45,15 +45,14 @@ import static org.oidc.agent.util.Constants.USER_STORE_NAME;
  */
 public class StateManager {
 
-    private static final AtomicReference<WeakReference<StateManager>> INSTANCE_REF =
-            new AtomicReference<>(new WeakReference<StateManager>(null));
+    private static final AtomicReference<WeakReference<StateManager>> INSTANCE_REF = new AtomicReference<>(
+            new WeakReference<StateManager>(null));
 
     private final SharedPreferences authPrefs;
     private final SharedPreferences userPrefs;
     private final AtomicReference<AuthState> currentAuthState;
     private final AtomicReference<UserInfoState> currentuserinfoState;
     private final String TAG = StateManager.class.getSimpleName();
-
 
     private StateManager(Context context) {
 
@@ -94,7 +93,7 @@ public class StateManager {
         if (currentAuthState.get() != null) {
             current = currentAuthState.get();
         } else {
-            AuthState state =  readAuthState();
+            AuthState state = readAuthState();
             if (currentAuthState.compareAndSet(null, state)) {
                 current = state;
             } else {
@@ -120,7 +119,7 @@ public class StateManager {
      * Updates the current AuthState with authorization response and exception.
      *
      * @param response Authorization response.
-     * @param ex Authorization exception.
+     * @param ex       Authorization exception.
      */
     @AnyThread
     public void updateAfterAuthorization(@Nullable AuthorizationResponse response,
@@ -135,10 +134,11 @@ public class StateManager {
      * Updates the current AuthState with token response and exception.
      *
      * @param response Token response.
-     * @param ex Authorization exception.
+     * @param ex       Authorization exception.
      */
     @AnyThread
-    public void updateAfterTokenResponse(@Nullable TokenResponse response, @Nullable AuthorizationException ex) {
+    public void updateAfterTokenResponse(@Nullable TokenResponse response,
+            @Nullable AuthorizationException ex) {
 
         AuthState current = getCurrentAuthState();
         current.update(response, ex);
@@ -190,7 +190,8 @@ public class StateManager {
 
     /**
      * Get current state of userinfo.
-     * @return
+     *
+     * @return UserInfoState.
      */
     @AnyThread
     public UserInfoState getCurrentUserState() {
@@ -198,8 +199,8 @@ public class StateManager {
         UserInfoState current = null;
         if (currentuserinfoState.get() != null) {
             current = currentuserinfoState.get();
-        } else{
-            UserInfoState state =  readUserState();
+        } else {
+            UserInfoState state = readUserState();
             if (currentuserinfoState.compareAndSet(null, state)) {
                 current = state;
             } else {
@@ -211,8 +212,10 @@ public class StateManager {
 
     /**
      * Read the userinfo state.
-     * @return
+     *
+     * @return UserInfo State
      */
+    @AnyThread
     private UserInfoState readUserState() {
 
         UserInfoState userInfoState;
@@ -232,9 +235,11 @@ public class StateManager {
 
     /**
      * Update the userinfo state.
+     *
      * @param response UserInfoResponse
      * @return UserinfoState
      */
+    @AnyThread
     public void updateAfterUserInfoState(UserInfoResponse response) {
 
         UserInfoState current = getCurrentUserState();
@@ -243,7 +248,12 @@ public class StateManager {
         currentuserinfoState.set(current);
     }
 
-
+    /**
+     * Write the userstate in shared preference.
+     *
+     * @param state UserInfoState.
+     */
+    @AnyThread
     private void writeUserState(@Nullable UserInfoState state) {
 
         SharedPreferences.Editor editor = userPrefs.edit();
@@ -257,4 +267,3 @@ public class StateManager {
         }
     }
 }
-

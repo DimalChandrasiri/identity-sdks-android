@@ -68,7 +68,8 @@ public class DefaultLoginService implements LoginService {
 
     }
 
-    private DefaultLoginService(Context context, Configuration configuration) throws ClientException {
+    private DefaultLoginService(Context context, Configuration configuration)
+            throws ClientException {
 
         if (mConfiguration == null) {
             new DefaultLoginService(context);
@@ -97,13 +98,14 @@ public class DefaultLoginService implements LoginService {
 
     /**
      * Returns LoginService object.
-     * @param context Context
+     *
+     * @param context       Context
      * @param configuration Configuration
      * @return LoginService
      * @throws ClientException
      */
-    public static DefaultLoginService getInstance(@NonNull Context context, Configuration configuration)
-            throws ClientException {
+    public static DefaultLoginService getInstance(@NonNull Context context,
+            Configuration configuration) throws ClientException {
 
         if (sDefaultLoginService == null) {
             sDefaultLoginService = new DefaultLoginService(context, configuration);
