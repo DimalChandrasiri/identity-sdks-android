@@ -18,7 +18,6 @@
 
 package org.oidc.agent.handler;
 
-import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
 import okio.Okio;
@@ -27,9 +26,7 @@ import org.json.JSONObject;
 import org.oidc.agent.context.AuthenticationContext;
 import org.oidc.agent.exception.ClientException;
 import org.oidc.agent.exception.ServerException;
-import org.oidc.agent.model.OIDCDiscoveryResponse;
 import org.oidc.agent.model.UserInfoResponse;
-import org.oidc.agent.context.StateManager;
 import org.oidc.agent.util.Constants;
 
 import java.io.IOException;
@@ -38,43 +35,40 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 
-//TODO :Renar
 public class UserInfoRequestHandler extends AsyncTask<Void, Void, UserInfoResponse> {
 
-    private OIDCDiscoveryResponse mDiscovery;
     private UserInfoResponseCallback mCallback;
     private ServerException mServerException;
     private UserInfoResponse mUserInfoResponse;
-    private StateManager mStateManager;
     private AuthenticationContext mAuthenticationContext;
 
     private static final String LOG_TAG = "UserInfoRequest";
 
-    public UserInfoRequestHandler(Context context, AuthenticationContext authenticationContext,
+    public UserInfoRequestHandler(AuthenticationContext authenticationContext,
             UserInfoResponseCallback callback) {
 
         this.mAuthenticationContext = authenticationContext;
         this.mCallback = callback;
-        this.mStateManager = StateManager.getInstance(context);
 
     }
 
     @Override
     protected UserInfoResponse doInBackground(Void... voids) {
 
-        if (mStateManager.getCurrentUserState() != null
-                && mStateManager.getCurrentUserState().getLastUserInfoResponse() != null) {
+        if (mAuthenticationContext.getOAuth2TokenResponse() != null
+                && mAuthenticationContext.getUserInfoResponse() !=null ) {
             Log.d(LOG_TAG, "There is already a userinfo response is stored");
-            mUserInfoResponse = mStateManager.getCurrentUserState().getLastUserInfoResponse();
+            mUserInfoResponse = mAuthenticationContext.getUserInfoResponse();
 
         } else {
             try {
-                if (mDiscovery == null) {
+                if (mAuthenticationContext.getOIDCDiscoveryResponse() == null) {
                     throw new ClientException(
                             "DiscoveryResponse is null. Reinitiate the " + "authentication");
                 }
-                String accessToken = mStateManager.getCurrentAuthState().getAccessToken();
-                URL userInfoEndpoint = new URL(mDiscovery.getUserInfoEndpoint().toString());
+                String accessToken = mAuthenticationContext.getOAuth2TokenResponse().getAccessToken();
+                URL userInfoEndpoint = new URL(mAuthenticationContext.getOIDCDiscoveryResponse()
+                        .getUserInfoEndpoint().toString());
 
                 HttpURLConnection conn = (HttpURLConnection) userInfoEndpoint.openConnection();
                 conn.setRequestProperty(Constants.AUTHORIZATION, Constants.BEARER + accessToken);
@@ -85,7 +79,6 @@ public class UserInfoRequestHandler extends AsyncTask<Void, Void, UserInfoRespon
 
                 JSONObject json = new JSONObject(response);
                 mUserInfoResponse = new UserInfoResponse(json);
-                mStateManager.updateAfterUserInfoState(mUserInfoResponse);
                 mAuthenticationContext.setUserInfoResponse(mUserInfoResponse);
 
 

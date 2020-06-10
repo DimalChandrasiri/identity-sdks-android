@@ -26,18 +26,16 @@ import android.util.Log;
 
 import androidx.browser.customtabs.CustomTabsIntent;
 
-import net.openid.appauth.AuthState;
 import net.openid.appauth.AuthorizationRequest;
 import net.openid.appauth.AuthorizationService;
 import net.openid.appauth.AuthorizationServiceConfiguration;
 import net.openid.appauth.ResponseTypeValues;
-import net.openid.appauth.TokenResponse;
 import org.oidc.agent.config.Configuration;
 import org.oidc.agent.context.AuthenticationContext;
-import org.oidc.agent.context.StateManager;
 import org.oidc.agent.exception.ClientException;
 import org.oidc.agent.config.FileBasedConfiguration;
 import org.oidc.agent.handler.OIDCDiscoveryRequestHandler;
+import org.oidc.agent.handler.TokenManagementActivity;
 import org.oidc.agent.handler.UserInfoRequestHandler;
 import org.oidc.agent.model.OAuth2TokenResponse;
 import org.oidc.agent.model.OIDCDiscoveryResponse;
@@ -50,11 +48,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-//ToDO: Model hold userinfo response,userinfo: hold login service
-//
-
 /**
- * Handles the login process by making use of AppAuth library.
+ * Provides authentication and logout support using Identity server.
  */
 public class DefaultLoginService implements LoginService {
 
@@ -65,13 +60,11 @@ public class DefaultLoginService implements LoginService {
     private AuthorizationService mAuthorizationService;
     private static final String LOG_TAG = "LoginService";
     private OIDCDiscoveryResponse mDiscovery;
-    private StateManager mStateManager;
 
     private DefaultLoginService(Context context) throws ClientException {
 
         mContext = new WeakReference<>(context);
         mConfiguration = FileBasedConfiguration.getInstance(context);
-        mStateManager = StateManager.getInstance(context.getApplicationContext());
     }
 
     private DefaultLoginService(Context context, Configuration configuration)
@@ -79,7 +72,6 @@ public class DefaultLoginService implements LoginService {
 
             mConfiguration = configuration;
             mContext = new WeakReference<>(context);
-            mStateManager = StateManager.getInstance(context.getApplicationContext());
     }
 
 
@@ -175,42 +167,8 @@ public class DefaultLoginService implements LoginService {
         } catch (UnsupportedEncodingException e) {
             Log.e(LOG_TAG, "Error while creating logout request", e);
         }
-        clearAuthState();
-    }
+        dispose();
 
-    private void clearAuthState() {
-
-        AuthState currentState = mStateManager.getCurrentAuthState();
-        if (currentState.getAuthorizationServiceConfiguration() != null) {
-            AuthState clearedState = new AuthState();
-            mStateManager.replaceAuthState(clearedState);
-        }
-    }
-
-    /**
-     * Return token response.
-     *
-     * @return OAuth2TokenResponse
-     */
-    public OAuth2TokenResponse getTokenResponse() {
-
-        if (mStateManager.getCurrentAuthState().isAuthorized()) {
-            if (mOAuth2TokenResponse == null
-                    && mStateManager.getCurrentAuthState().getLastTokenResponse() != null) {
-                TokenResponse tokenResponse = mStateManager.getCurrentAuthState()
-                        .getLastTokenResponse();
-
-                OAuth2TokenResponse response = new OAuth2TokenResponse();
-                response.setIdToken(tokenResponse.idToken);
-                response.setAccessToken(tokenResponse.accessToken);
-                response.setRefreshToken(tokenResponse.refreshToken);
-                response.setTokenType(tokenResponse.tokenType);
-                mOAuth2TokenResponse = response;
-
-            }
-            return mOAuth2TokenResponse;
-        }
-        return null;
     }
 
     /**
@@ -221,9 +179,8 @@ public class DefaultLoginService implements LoginService {
     public void getUserInfo(AuthenticationContext context,
             UserInfoRequestHandler.UserInfoResponseCallback callback) {
 
-        if (mStateManager.getCurrentAuthState().isAuthorized()) {
-            new UserInfoRequestHandler(mContext.get(), context,
-                    callback).execute();
+        if (context.getOAuth2TokenResponse() != null) {
+            new UserInfoRequestHandler(context, callback).execute();
         } else {
             Log.e(LOG_TAG, "User does not have a authenticated session");
         }
@@ -239,15 +196,4 @@ public class DefaultLoginService implements LoginService {
         }
     }
 
-    /**
-     * Returns whether the user is logged in or not.
-     *
-     * @return true if the user is logged in, else returns false.
-     */
-    public boolean isUserLoggedIn() {
-
-        return mStateManager.getCurrentAuthState().isAuthorized()
-                && mStateManager.getCurrentAuthState().getAuthorizationServiceConfiguration()
-                != null;
-    }
 }

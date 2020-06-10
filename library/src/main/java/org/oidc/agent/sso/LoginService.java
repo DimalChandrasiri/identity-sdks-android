@@ -26,17 +26,30 @@ import org.oidc.agent.model.OAuth2TokenResponse;
 
 public interface LoginService {
 
-     void authorize(PendingIntent successIntent, PendingIntent failureIntent);
+    /**
+     * Handles authorization flow.
+     *
+     * @param successIntent Success intent.
+     * @param failureIntent Failure Intent.
+     */
+    void authorize(PendingIntent successIntent, PendingIntent failureIntent);
 
+    /**
+     * Get call userinfo endpoint.
+     *
+     * @param context  Authentication context.
+     * @param callback Callback.
+     */
     void getUserInfo(AuthenticationContext context,
             UserInfoRequestHandler.UserInfoResponseCallback callback);
 
-    OAuth2TokenResponse getTokenResponse();
+    /**
+     * Handles logout flow.
+     *
+     * @param context               Context
+     * @param authenticationContext AuthenticationContext
+     */
+    void logout(Context context, AuthenticationContext authenticationContext);
 
-    boolean isUserLoggedIn();
-
-    void logout(Context context, AuthenticationContext authcontext);
-
-    void dispose();
 }
 

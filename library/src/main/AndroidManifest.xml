@@ -20,7 +20,7 @@
     package="org.oidc.agent.library" >
 
 <application>
-    <activity android:name="org.oidc.agent.sso.TokenManagementActivity"
+    <activity android:name="org.oidc.agent.handler.TokenManagementActivity"
             android:exported="false"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
             android:launchMode="singleTask" />

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.oidc.agent.sso;
+package org.oidc.agent.handler;
 
 import android.app.Activity;
 import android.app.PendingIntent;
@@ -31,7 +31,6 @@ import net.openid.appauth.AuthorizationService;
 import net.openid.appauth.TokenResponse;
 import net.openid.appauth.internal.Logger;
 import org.oidc.agent.context.AuthenticationContext;
-import org.oidc.agent.context.StateManager;
 import org.oidc.agent.model.OAuth2TokenResponse;
 
 public class TokenManagementActivity extends Activity {
@@ -43,11 +42,11 @@ public class TokenManagementActivity extends Activity {
     PendingIntent mCompleteIntent;
     PendingIntent mCancelIntent;
     private static OAuth2TokenResponse sResponse;
-    private StateManager mStateManager;
     static AuthenticationContext mAuthenticationContext;
 
-    static PendingIntent createStartIntent(Context context, PendingIntent completeIntent,
-            PendingIntent cancelIntent, OAuth2TokenResponse response, AuthenticationContext authenticationContext) {
+    public static PendingIntent createStartIntent(Context context, PendingIntent completeIntent,
+            PendingIntent cancelIntent, OAuth2TokenResponse response,
+            AuthenticationContext authenticationContext) {
 
         Intent tokenExchangeIntent = new Intent(context, TokenManagementActivity.class);
         tokenExchangeIntent.putExtra(KEY_COMPLETE_INTENT, completeIntent);
@@ -64,7 +63,6 @@ public class TokenManagementActivity extends Activity {
 
         super.onCreate(savedInstanceState);
         mAuthorizationService = new AuthorizationService(this);
-        mStateManager = StateManager.getInstance(this);
         if (savedInstanceState == null) {
             extractState(getIntent().getExtras());
         } else {
@@ -91,7 +89,6 @@ public class TokenManagementActivity extends Activity {
 
             if (response != null) {
                 handleAuthorizationResponse(response);
-                mStateManager.updateAfterAuthorization(response, ex);
             }
         }
     }
@@ -129,7 +126,6 @@ public class TokenManagementActivity extends Activity {
                     mAuthenticationContext.setOAuth2TokenResponse(sResponse);
 
                     Intent intent = new Intent(this, mCompleteIntent.getIntentSender().getClass());
-                    mStateManager.updateAfterTokenResponse(tokenResponse, exception);
                     intent.putExtra("context", mAuthenticationContext);
                     try {
                         mCompleteIntent.send(this, 0,intent);
@@ -155,7 +151,7 @@ public class TokenManagementActivity extends Activity {
         finish();
     }
 
-    void extractState(Bundle state) {
+    private void extractState(Bundle state) {
 
         if (state == null) {
             Log.d(LOG_TAG, "Cannot handle response");
@@ -165,5 +161,4 @@ public class TokenManagementActivity extends Activity {
         mCompleteIntent = state.getParcelable(KEY_COMPLETE_INTENT);
         mCancelIntent = state.getParcelable(KEY_CANCEL_INTENT);
     }
-
 }
