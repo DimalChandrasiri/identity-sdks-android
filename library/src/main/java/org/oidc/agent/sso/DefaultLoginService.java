@@ -24,7 +24,6 @@ import android.content.Intent;
 import android.net.Uri;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.browser.customtabs.CustomTabsIntent;
 
 import net.openid.appauth.AuthState;
@@ -34,8 +33,14 @@ import net.openid.appauth.AuthorizationServiceConfiguration;
 import net.openid.appauth.ResponseTypeValues;
 import net.openid.appauth.TokenResponse;
 import org.oidc.agent.config.Configuration;
+import org.oidc.agent.context.AuthenticationContext;
+import org.oidc.agent.context.StateManager;
 import org.oidc.agent.exception.ClientException;
 import org.oidc.agent.config.FileBasedConfiguration;
+import org.oidc.agent.handler.OIDCDiscoveryRequestHandler;
+import org.oidc.agent.handler.UserInfoRequestHandler;
+import org.oidc.agent.model.OAuth2TokenResponse;
+import org.oidc.agent.model.OIDCDiscoveryResponse;
 import org.oidc.agent.util.Constants;
 import org.oidc.agent.util.Util;
 
@@ -61,84 +66,45 @@ public class DefaultLoginService implements LoginService {
     private static final String LOG_TAG = "LoginService";
     private OIDCDiscoveryResponse mDiscovery;
     private StateManager mStateManager;
-    private static DefaultLoginService sDefaultLoginService;
 
     private DefaultLoginService(Context context) throws ClientException {
 
         mContext = new WeakReference<>(context);
         mConfiguration = FileBasedConfiguration.getInstance(context);
         mStateManager = StateManager.getInstance(context.getApplicationContext());
-
     }
 
     private DefaultLoginService(Context context, Configuration configuration)
             throws ClientException {
 
-        if (mConfiguration == null) {
-            new DefaultLoginService(context);
-        } else {
             mConfiguration = configuration;
             mContext = new WeakReference<>(context);
             mStateManager = StateManager.getInstance(context.getApplicationContext());
-        }
     }
 
-    /**
-     * Returns the login service instance.
-     *
-     * @param context Context
-     * @return LoginService
-     */
-    public static DefaultLoginService getInstance(@NonNull Context context) throws ClientException {
-
-        if (sDefaultLoginService == null) {
-            sDefaultLoginService = new DefaultLoginService(context);
-        } else if (sDefaultLoginService.mContext.get() == null) {
-            sDefaultLoginService.mContext = new WeakReference<>(context);
-        }
-        return sDefaultLoginService;
-    }
-
-    /**
-     * Returns LoginService object.
-     *
-     * @param context       Context
-     * @param configuration Configuration
-     * @return LoginService
-     * @throws ClientException
-     */
-    public static DefaultLoginService getInstance(@NonNull Context context,
-            Configuration configuration) throws ClientException {
-
-        if (sDefaultLoginService == null) {
-            sDefaultLoginService = new DefaultLoginService(context, configuration);
-        } else if (sDefaultLoginService.mContext.get() == null) {
-            sDefaultLoginService.mContext = new WeakReference<>(context);
-        }
-        return sDefaultLoginService;
-
-    }
 
     /**
      * Handles the authorization flow by getting the endpoints from discovery service.
      * TODO: catch the errors and pass it to failure intent.
-     *
-     * @param successIntent successIntent.
+     *  @param successIntent successIntent.
      * @param failureIntent failureIntent.
      */
     public void authorize(PendingIntent successIntent, PendingIntent failureIntent) {
 
+        // Creating a authentication context object to store context.
+        AuthenticationContext authenticationContext = new AuthenticationContext();
         mOAuth2TokenResponse = new OAuth2TokenResponse();
-        new OIDCDiscoveryRequest(mConfiguration.getDiscoveryUri().toString(),
+        new OIDCDiscoveryRequestHandler(mConfiguration.getDiscoveryUri().toString(),
                 (exception, oidcDiscoveryResponse) -> {
                     if (exception != null) {
                         Log.e(LOG_TAG, "Error while calling discovery endpoint", exception);
                     } else {
-                        mDiscovery = oidcDiscoveryResponse;
+                        authenticationContext.setOIDCDiscoveryResponse(oidcDiscoveryResponse);
                         Log.i(LOG_TAG, oidcDiscoveryResponse.getAuthorizationEndpoint().toString());
                         authorizeRequest(TokenManagementActivity
                                 .createStartIntent(mContext.get(), successIntent, failureIntent,
-                                        mOAuth2TokenResponse), failureIntent);
+                                        mOAuth2TokenResponse, authenticationContext),
+                                failureIntent, authenticationContext);
                     }
 
                 }).execute();
@@ -150,9 +116,11 @@ public class DefaultLoginService implements LoginService {
      * @param completionIntent CompletionIntent.
      * @param cancelIntent     CancelIntent.
      */
-    private void authorizeRequest(PendingIntent completionIntent, PendingIntent cancelIntent) {
+    private void authorizeRequest(PendingIntent completionIntent, PendingIntent cancelIntent,
+            AuthenticationContext authenticationContext) {
 
-        if (mDiscovery != null) {
+        if ( authenticationContext.getOIDCDiscoveryResponse() != null) {
+            mDiscovery = authenticationContext.getOIDCDiscoveryResponse();
             AuthorizationServiceConfiguration serviceConfiguration = new AuthorizationServiceConfiguration(
                     mDiscovery.getAuthorizationEndpoint(), mDiscovery.getTokenEndpoint());
 
@@ -179,18 +147,21 @@ public class DefaultLoginService implements LoginService {
     /**
      * Handles logout request from the client application.
      */
-    public void logout() {
+    public void logout(Context context, AuthenticationContext authenticationContext) {
 
+        OAuth2TokenResponse oAuth2TokenResponse = null;
         Map<String, String> paramMap = new HashMap<>();
-        if (mOAuth2TokenResponse == null) {
-            mOAuth2TokenResponse = getTokenResponse();
+        if (authenticationContext.getOAuth2TokenResponse() != null) {
+            oAuth2TokenResponse = authenticationContext.getOAuth2TokenResponse();
+            paramMap.put(Constants.ID_TOKEN_HINT, oAuth2TokenResponse.getIdToken());
         }
-        paramMap.put(Constants.ID_TOKEN_HINT, mOAuth2TokenResponse.getIdToken());
+
         paramMap.put(Constants.POST_LOGOUT_REDIRECT_URI,
                 mConfiguration.getRedirectUri().toString());
         try {
-            if (mDiscovery != null) {
-                String url = Util.buildURLWithQueryParams(mDiscovery.getLogoutEndpoint().toString(),
+            if (authenticationContext.getOIDCDiscoveryResponse() != null) {
+                String url = Util.buildURLWithQueryParams(authenticationContext.getOIDCDiscoveryResponse()
+                                .getLogoutEndpoint().toString(),
                         paramMap);
                 Log.d(LOG_TAG, "Handling logout request for service provider :" + mConfiguration
                         .getClientId());
@@ -199,7 +170,7 @@ public class DefaultLoginService implements LoginService {
                 customTabsIntent.intent.setFlags(
                         Intent.FLAG_ACTIVITY_NO_HISTORY | Intent.FLAG_ACTIVITY_NEW_TASK
                                 | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                customTabsIntent.launchUrl(mContext.get(), Uri.parse(url));
+                customTabsIntent.launchUrl(context.getApplicationContext(), Uri.parse(url));
             }
         } catch (UnsupportedEncodingException e) {
             Log.e(LOG_TAG, "Error while creating logout request", e);
@@ -247,10 +218,12 @@ public class DefaultLoginService implements LoginService {
      *
      * @param callback UserInfoResponseCallback.
      */
-    public void getUserInfo(UserInfoRequestHandler.UserInfoResponseCallback callback) {
+    public void getUserInfo(AuthenticationContext context,
+            UserInfoRequestHandler.UserInfoResponseCallback callback) {
 
         if (mStateManager.getCurrentAuthState().isAuthorized()) {
-            new UserInfoRequestHandler(mContext.get(), mDiscovery, callback).execute();
+            new UserInfoRequestHandler(mContext.get(), context,
+                    callback).execute();
         } else {
             Log.e(LOG_TAG, "User does not have a authenticated session");
         }

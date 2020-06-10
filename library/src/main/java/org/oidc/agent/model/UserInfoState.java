@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.oidc.agent.sso;
+package org.oidc.agent.model;
 
 import android.util.Log;
 import androidx.annotation.NonNull;
@@ -61,8 +61,12 @@ public class UserInfoState extends AuthState {
     public JSONObject jsonSerialize() {
         JSONObject json = new JSONObject();
         if (mLastUserInfoResponse != null) {
-            put(json, Constants.KEY_LAST_USERINFO_RESPONSE,
-                    mLastUserInfoResponse.getUserInfoProperties());
+            try {
+                put(json, Constants.KEY_LAST_USERINFO_RESPONSE,
+                        mLastUserInfoResponse.getUserInfoProperties());
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
         }
         return json;
     }

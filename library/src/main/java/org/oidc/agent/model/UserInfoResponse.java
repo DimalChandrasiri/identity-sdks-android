@@ -16,26 +16,27 @@
  * under the License.
  */
 
-package org.oidc.agent.sso;
+package org.oidc.agent.model;
 
 import android.util.Log;
 import androidx.annotation.NonNull;
-import net.openid.appauth.AuthorizationRequest;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.oidc.agent.util.Constants;
 
+import java.io.Serializable;
+
 /**
  * This class contains userinfo response.
  */
-public class UserInfoResponse {
+public class UserInfoResponse implements Serializable {
 
-    private JSONObject mUserInfoResponse;
+    private String mUserInfoResponse;
     private static final String LOG_TAG = "UserInfoResponse";
 
     public UserInfoResponse(JSONObject userInfoResponse) {
 
-        mUserInfoResponse = userInfoResponse;
+        mUserInfoResponse = userInfoResponse.toString();
     }
 
     /**
@@ -58,7 +59,8 @@ public class UserInfoResponse {
 
         String userInfoProperty = null;
         try {
-            userInfoProperty = (String) mUserInfoResponse.get(property);
+            JSONObject obj = new JSONObject(mUserInfoResponse);
+            userInfoProperty = (String) obj.get(property);
             Log.d(LOG_TAG, "Get the value for the claim: " + property + " from userinfo response");
 
         } catch (JSONException e) {
@@ -67,10 +69,11 @@ public class UserInfoResponse {
         return userInfoProperty;
     }
 
-    public JSONObject getUserInfoProperties() {
+
+    public JSONObject getUserInfoProperties() throws JSONException {
 
         Log.d(LOG_TAG, "Get all claim information from userinfo response");
-        return mUserInfoResponse;
+        return new JSONObject(mUserInfoResponse);
     }
 
     public static UserInfoResponse jsonDeserialize(@NonNull JSONObject json) throws JSONException {

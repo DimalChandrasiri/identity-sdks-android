@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.oidc.agent.sso;
+package org.oidc.agent.handler;
 
 import android.os.AsyncTask;
 import android.util.Log;
@@ -26,6 +26,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.oidc.agent.exception.ClientException;
 import org.oidc.agent.exception.ServerException;
+import org.oidc.agent.model.OIDCDiscoveryResponse;
 import org.oidc.agent.util.Constants;
 
 import java.io.IOException;
@@ -37,14 +38,14 @@ import java.nio.charset.Charset;
 /**
  * Handles the OIDC Discovery request flow to Identity Server.
  */
-public class OIDCDiscoveryRequest extends AsyncTask<Void, Void, OIDCDiscoveryResponse> {
+public class OIDCDiscoveryRequestHandler extends AsyncTask<Void, Void, OIDCDiscoveryResponse> {
 
     private String mDiscoveryEndpoint;
     private OIDCDiscoveryRespCallback mCallback;
     private static final String LOG_TAG = "OIDCDiscoveryRequest";
     private Exception exception;
 
-    OIDCDiscoveryRequest(String discoveryEndpoint, OIDCDiscoveryRespCallback callback) {
+    public OIDCDiscoveryRequestHandler(String discoveryEndpoint, OIDCDiscoveryRespCallback callback) {
         this.mDiscoveryEndpoint = discoveryEndpoint;
         this.mCallback = callback;
 
@@ -93,7 +94,6 @@ public class OIDCDiscoveryRequest extends AsyncTask<Void, Void, OIDCDiscoveryRes
             }
             JSONObject jsonResponse = new JSONObject(response);
             OIDCDiscoveryResponse discoveryResponse = new OIDCDiscoveryResponse(jsonResponse);
-            Log.i(LOG_TAG, discoveryResponse.getLogoutEndpoint().toString());
             return discoveryResponse;
 
         } catch (MalformedURLException e) {

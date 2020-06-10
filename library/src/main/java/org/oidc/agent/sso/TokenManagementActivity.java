@@ -30,6 +30,9 @@ import net.openid.appauth.AuthorizationResponse;
 import net.openid.appauth.AuthorizationService;
 import net.openid.appauth.TokenResponse;
 import net.openid.appauth.internal.Logger;
+import org.oidc.agent.context.AuthenticationContext;
+import org.oidc.agent.context.StateManager;
+import org.oidc.agent.model.OAuth2TokenResponse;
 
 public class TokenManagementActivity extends Activity {
 
@@ -41,14 +44,16 @@ public class TokenManagementActivity extends Activity {
     PendingIntent mCancelIntent;
     private static OAuth2TokenResponse sResponse;
     private StateManager mStateManager;
+    static AuthenticationContext mAuthenticationContext;
 
     static PendingIntent createStartIntent(Context context, PendingIntent completeIntent,
-            PendingIntent cancelIntent, OAuth2TokenResponse response) {
+            PendingIntent cancelIntent, OAuth2TokenResponse response, AuthenticationContext authenticationContext) {
 
         Intent tokenExchangeIntent = new Intent(context, TokenManagementActivity.class);
         tokenExchangeIntent.putExtra(KEY_COMPLETE_INTENT, completeIntent);
         tokenExchangeIntent.putExtra(KEY_CANCEL_INTENT, cancelIntent);
         sResponse = response;
+        mAuthenticationContext = authenticationContext;
 
         return PendingIntent
                 .getActivity(context, 0, tokenExchangeIntent, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -83,11 +88,19 @@ public class TokenManagementActivity extends Activity {
             });
         } else {
             AuthorizationResponse response = AuthorizationResponse.fromIntent(getIntent());
+
             if (response != null) {
                 handleAuthorizationResponse(response);
                 mStateManager.updateAfterAuthorization(response, ex);
             }
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+
+        super.onDestroy();
+        finish();
     }
 
     private void handleAuthorizationResponse(AuthorizationResponse response) {
@@ -109,19 +122,27 @@ public class TokenManagementActivity extends Activity {
                 if (mCompleteIntent != null) {
                     Logger.debug("Authorization complete - invoking completion intent");
                     sResponse.setAccessToken(tokenResponse.accessToken);
-
                     sResponse.setIdToken(tokenResponse.idToken);
                     sResponse.setAccessTokenExpirationTime(tokenResponse.accessTokenExpirationTime);
                     sResponse.setRefreshToken(tokenResponse.refreshToken);
                     sResponse.setTokenType(tokenResponse.tokenType);
-                    sendPendingIntent(mCompleteIntent);
+                    mAuthenticationContext.setOAuth2TokenResponse(sResponse);
+
+                    Intent intent = new Intent(this, mCompleteIntent.getIntentSender().getClass());
                     mStateManager.updateAfterTokenResponse(tokenResponse, exception);
+                    intent.putExtra("context", mAuthenticationContext);
+                    try {
+                        mCompleteIntent.send(this, 0,intent);
+                    } catch (PendingIntent.CanceledException e) {
+                        e.printStackTrace();
+                    }
                     mAuthorizationService.dispose();
                 }
             } else {
                 sendPendingIntent(mCancelIntent);
             }
         }
+        finish();
     }
 
     private void sendPendingIntent(PendingIntent pendingIntent) {

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.oidc.agent.sso;
+package org.oidc.agent.context;
 
 import android.util.Log;
 import android.content.Context;
@@ -34,11 +34,12 @@ import net.openid.appauth.AuthorizationResponse;
 import net.openid.appauth.TokenResponse;
 
 import org.json.JSONException;
+import org.oidc.agent.model.UserInfoResponse;
+import org.oidc.agent.model.UserInfoState;
 
 import static org.oidc.agent.util.Constants.AUTH_STATE;
 import static org.oidc.agent.util.Constants.AUTH_STORE_NAME;
 import static org.oidc.agent.util.Constants.USER_STATE;
-import static org.oidc.agent.util.Constants.USER_STORE_NAME;
 
 /**
  * A mechanism for handling the AuthState.
@@ -180,6 +181,8 @@ public class StateManager {
             editor.remove(AUTH_STATE);
         } else {
             editor.putString(AUTH_STATE, state.jsonSerializeString());
+            AuthenticationContext context = new AuthenticationContext();
+            editor.putString(AUTH_STATE, context.toString() );
         }
         if (!editor.commit()) {
             Log.e(TAG, "Failed to write state to shared prefs.");

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.oidc.agent.sso;
+package org.oidc.agent.model;
 
 import android.net.Uri;
 import android.util.Log;
@@ -24,17 +24,20 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.oidc.agent.util.Constants;
 
+import java.io.Serializable;
+
 /**
  * This class stores the discovery response.
  */
-public class OIDCDiscoveryResponse {
+public class OIDCDiscoveryResponse implements Serializable {
 
-    private JSONObject mDiscoveryResponse;
+    private String mDiscoveryResponse;
     private static final String LOG_TAG = "OAuthDiscoveryResponse";
 
     public OIDCDiscoveryResponse(JSONObject discoveryResponse) {
 
-        mDiscoveryResponse = discoveryResponse;
+        mDiscoveryResponse = discoveryResponse.toString();
+
     }
 
     /**
@@ -108,7 +111,8 @@ public class OIDCDiscoveryResponse {
 
         String discoveryProperty = null;
         try {
-            discoveryProperty = (String) mDiscoveryResponse.get(property);
+            JSONObject obj = new JSONObject(mDiscoveryResponse);
+            discoveryProperty = (String) obj.get(property);
         } catch (JSONException e) {
 
         }

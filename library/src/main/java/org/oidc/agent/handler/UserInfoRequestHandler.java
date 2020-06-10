@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.oidc.agent.sso;
+package org.oidc.agent.handler;
 
 import android.content.Context;
 import android.os.AsyncTask;
@@ -24,8 +24,12 @@ import android.util.Log;
 import okio.Okio;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.oidc.agent.context.AuthenticationContext;
 import org.oidc.agent.exception.ClientException;
 import org.oidc.agent.exception.ServerException;
+import org.oidc.agent.model.OIDCDiscoveryResponse;
+import org.oidc.agent.model.UserInfoResponse;
+import org.oidc.agent.context.StateManager;
 import org.oidc.agent.util.Constants;
 
 import java.io.IOException;
@@ -42,13 +46,14 @@ public class UserInfoRequestHandler extends AsyncTask<Void, Void, UserInfoRespon
     private ServerException mServerException;
     private UserInfoResponse mUserInfoResponse;
     private StateManager mStateManager;
+    private AuthenticationContext mAuthenticationContext;
 
     private static final String LOG_TAG = "UserInfoRequest";
 
-    UserInfoRequestHandler(Context context, OIDCDiscoveryResponse discovery,
+    public UserInfoRequestHandler(Context context, AuthenticationContext authenticationContext,
             UserInfoResponseCallback callback) {
 
-        this.mDiscovery = discovery;
+        this.mAuthenticationContext = authenticationContext;
         this.mCallback = callback;
         this.mStateManager = StateManager.getInstance(context);
 
@@ -81,6 +86,8 @@ public class UserInfoRequestHandler extends AsyncTask<Void, Void, UserInfoRespon
                 JSONObject json = new JSONObject(response);
                 mUserInfoResponse = new UserInfoResponse(json);
                 mStateManager.updateAfterUserInfoState(mUserInfoResponse);
+                mAuthenticationContext.setUserInfoResponse(mUserInfoResponse);
+
 
             } catch (MalformedURLException e) {
                 String error = "Error while calling userinfo endpoint";
@@ -123,6 +130,7 @@ public class UserInfoRequestHandler extends AsyncTask<Void, Void, UserInfoRespon
          *
          * @param userInfoResponse UserInfoResponse
          */
-        void onUserInfoRequestCompleted(UserInfoResponse userInfoResponse, ServerException ex);
+        public void onUserInfoRequestCompleted(UserInfoResponse userInfoResponse,
+                ServerException ex);
     }
 }

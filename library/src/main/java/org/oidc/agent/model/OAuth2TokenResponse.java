@@ -16,12 +16,16 @@
  * under the License.
  */
 
-package org.oidc.agent.sso;
+package org.oidc.agent.model;
+
+import android.os.Parcelable;
+
+import java.io.Serializable;
 
 /**
  * This class contains the TokenResponse.
  */
-public class OAuth2TokenResponse {
+public class OAuth2TokenResponse implements Serializable {
 
     private String mTokenType;
     private String mAccessToken;
